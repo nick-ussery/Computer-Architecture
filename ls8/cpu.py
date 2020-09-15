@@ -10,6 +10,9 @@ import sys
 * `MDR`: Memory Data Register, holds the value to write or the value just read
 * `FL`: Flags, see below
 """
+LDI = 0b10000010
+PRN = 0b01000111
+HLT = 0b00000001
 
 
 class CPU:
@@ -21,7 +24,14 @@ class CPU:
         self.registers = [0, 0, 0, 0, 0, 0, 0, 0xF4]
         self.pc = 0
         self.running = False
-        self.sp = 7
+
+    # takes in register and returns the value at that ram[register]
+    def ram_read(self, address):
+        return self.ram[address]
+
+    # takes in register and value and sets the ram at that register to the value
+    def ram_write(self, value, address):
+        self.ram[address] = value
 
     def load(self):
         """Load a program into memory."""
@@ -73,33 +83,33 @@ class CPU:
 
         print()
 
-    # takes in register and returns the value at that ram[register]
-    def ram_read(self, MAR):
-        return self.ram[MAR]
-
-    # takes in register and value and sets the ram at that register to the value
-    def ram_write(self, MAR, MDR):
-        self.ram[MAR] = MDR
-
     def HLT(self):  # exit mechanic
         self.running = False
 
-    def LDI(self):  # set the value of a register to an integer
-        # register to change is the next line in counter
-        new_register = self.ram_read(self.pc+1)
-        # value is the line after the designated register
-        new_value = self.ram_read(self.pc+2)
-        self.registers[new_register] = new_value
-        self.pc += 3  # have to skip forward since we used the next 2 lines
+    def LDI(self, register, integer):  # set the value of a register to an integer
+        self.registers[register] = integer
 
-    def PRN(self):  # print numeric value stored in the given register
-        # read the next line that points to register
-        reg = self.ram_read(self.pc+1)
-        print(self.registers[reg])  # rint the register requested
-        self.pc += 2  # skip the next line
+    def PRN(self, register):  # print numeric value stored in the given register
+        print(self.registers[register])
 
     def run(self):
         """Run the CPU."""
         self.running = True  # turn on
-        while self.running:  # while on
-            ir = self.ram_read(self.pc)  # run each line
+        operand_a = self.ram_read(self.pc + 1)
+        operand_b = self.ram_read(self.pc + 2)
+
+        while self.running:
+            instruction_register = self.pc
+            instruction = self.ram[instruction_register]
+
+            if instruction == LDI:
+                self.LDI(operand_a, operand_b)
+                self.pc += 2
+
+            elif instruction == PRN:
+                self.PRN(operand_a)
+                self.pc += 1
+
+            elif instruction == HLT:
+                return self.HLT()
+            self.pc += 1
