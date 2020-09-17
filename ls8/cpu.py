@@ -17,7 +17,9 @@ class CPU:
             0b10000010: self.LDI,
             0b01000111: self.PRN,
             0b10100010: self.MUL,
-            0b00000001: self.HLT
+            0b00000001: self.HLT,
+            0b01000101: self.PUSH,
+            0b01000110: self.POP
         }
 
     def load(self):
@@ -96,10 +98,36 @@ class CPU:
     def MUL(self):
         self.alu("MUL", self.pc+1, self.pc+2)
 
+    def PUSH(self):
+        # Decrement SP
+        # Get the reg num to push
+        # Get the value to push
+        # Copy the value to the SP address
+        # print(memory[0xea:0xf4])
+        self.registers[self.sp] -= 1
+        reg_number = self.ram[self.pc+1]
+        value = self.registers[reg_number]
+        self.ram[self.registers[self.sp]] = value
+        self.pc += 2
+
+    # Pop the value at the top of the stack into the given register.
+    def POP(self):
+        # Get reg to pop into
+        # Get the top of stack addr
+        # top_of_stack_addr = registers[self.sp]
+        # Get the value at the top of the stack
+        # Store the value in the register
+        # Increment the SP
+        address = self.registers[self.sp]
+        value = self.ram[address]
+        self.registers[self.ram[self.pc+1]] = value
+        self.registers[self.sp] += 1
+        self.pc += 2
+
     def run(self):
         """Run the CPU."""
         self.running = True
         while self.running:
-            ir = self.ram_read(self.pc)
-            if ir in self.branch_table:
-                self.branch_table[ir]()
+            command = self.ram_read(self.pc)
+            if command in self.branch_table:
+                self.branch_table[command]()
